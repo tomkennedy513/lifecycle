@@ -15,6 +15,8 @@ import (
 func Extract(r io.Reader, confineTo string) error {
 	root := confineTo
 	if root == "" {
+		// Intentional documented fallback: no confinement. Every lifecycle caller
+		// passes a non-empty LayersDir, so this branch is not reached in practice.
 		root = `/`
 	}
 	root = filepath.Clean(root)

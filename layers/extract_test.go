@@ -1,6 +1,8 @@
 package layers_test
 
 import (
+	"archive/tar"
+	"bytes"
 	"os"
 	"path/filepath"
 	"testing"
@@ -52,6 +54,25 @@ func testLayersExtract(t *testing.T, when spec.G, it spec.S) {
 
 			got := h.MustReadFile(t, filepath.Join(layersDir, "sbom", "launch", "some-file"))
 			h.AssertEq(t, string(got), "bom-data")
+		})
+
+		it("rejects an entry that escapes the confinement root", func() {
+			escapeTarget := filepath.Join(filepath.Dir(layersDir), "lifecycle-escaped-file")
+
+			var buf bytes.Buffer
+			tw := tar.NewWriter(&buf)
+			h.AssertNil(t, tw.WriteHeader(&tar.Header{
+				Name:     escapeTarget,
+				Typeflag: tar.TypeReg,
+				Mode:     0644,
+				Size:     0,
+			}))
+			h.AssertNil(t, tw.Close())
+
+			h.AssertError(t, layers.Extract(&buf, layersDir), "escapes destination root")
+
+			_, statErr := os.Lstat(escapeTarget)
+			h.AssertError(t, statErr, "no such file or directory")
 		})
 	})
 }
