@@ -121,6 +121,9 @@ func applyUmask(mode os.FileMode, umask int) os.FileMode {
 }
 
 func writeFile(in io.Reader, path string, mode os.FileMode, buf []byte) (err error) {
+	// path is confined to destRoot by checkPathIsSafe and opened with O_NOFOLLOW
+	// so a planted symlink cannot redirect the write.
+	// #nosec G304
 	fh, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC|noFollow, mode)
 	if err != nil {
 		return err

@@ -137,7 +137,7 @@ func testExtract(t *testing.T, when spec.G, it spec.S) {
 			it("does not follow it", func() {
 				outside, err := os.MkdirTemp("", "nofollow-outside")
 				h.AssertNil(t, err)
-				defer os.RemoveAll(outside)
+				defer func() { _ = os.RemoveAll(outside) }()
 				victim := filepath.Join(outside, "victim")
 
 				// Pre-plant a symlink inside destRoot pointing outside.

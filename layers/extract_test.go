@@ -46,7 +46,7 @@ func testLayersExtract(t *testing.T, when spec.G, it spec.S) {
 
 			rc, err := os.Open(layer.TarPath)
 			h.AssertNil(t, err)
-			defer rc.Close()
+			defer func() { _ = rc.Close() }()
 
 			h.AssertNil(t, layers.Extract(rc, layersDir))
 
