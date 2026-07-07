@@ -67,7 +67,7 @@ func Extract(tr TarReader, destRoot string) error {
 
 		switch hdr.Typeflag {
 		case tar.TypeDir:
-			if err := checkPathIsSafe(hdr.Name, destRoot, symlinksCreated); err != nil {
+			if err := checkPathIsSafe(hdr.Name, destRoot, symlinksCreated, true); err != nil {
 				return errors.Wrapf(err, "refusing to extract directory %q", hdr.Name)
 			}
 			if _, err := os.Stat(hdr.Name); os.IsNotExist(err) {
@@ -80,7 +80,7 @@ func Extract(tr TarReader, destRoot string) error {
 			dirsFound[hdr.Name] = true
 
 		case tar.TypeReg:
-			if err := checkPathIsSafe(hdr.Name, destRoot, symlinksCreated); err != nil {
+			if err := checkPathIsSafe(hdr.Name, destRoot, symlinksCreated, false); err != nil {
 				return errors.Wrapf(err, "refusing to extract file %q", hdr.Name)
 			}
 			dirPath := filepath.Dir(hdr.Name)
@@ -97,7 +97,7 @@ func Extract(tr TarReader, destRoot string) error {
 				return errors.Wrapf(err, "failed to write file %q", hdr.Name)
 			}
 		case tar.TypeSymlink:
-			if err := checkPathIsSafe(hdr.Name, destRoot, symlinksCreated); err != nil {
+			if err := checkPathIsSafe(hdr.Name, destRoot, symlinksCreated, false); err != nil {
 				return errors.Wrapf(err, "refusing to create symlink %q", hdr.Name)
 			}
 			if err := validateSymlinkTarget(hdr.Name, hdr.Linkname, destRoot); err != nil {
@@ -149,13 +149,22 @@ func validateSymlinkTarget(name, linkname, destRoot string) error {
 	return nil
 }
 
-func checkPathIsSafe(path, destRoot string, symlinksCreated map[string]bool) error {
+func checkPathIsSafe(path, destRoot string, symlinksCreated map[string]bool, isDir bool) error {
 	rel, err := filepath.Rel(destRoot, path)
 	if err != nil {
 		return fmt.Errorf("failed to determine path %q relative to destination root %q: %w", path, destRoot, err)
 	}
 	rel = filepath.Clean(rel)
 	if rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		// Permit strict ancestors of destRoot, but only for directory entries
+		// (parent TypeDir entries emitted by layers.DirLayer). A non-dir entry at
+		// an ancestor path is never legitimate and stays rejected here.
+		if isDir {
+			cleanPath := filepath.Clean(path) + string(filepath.Separator)
+			if strings.HasPrefix(destRoot+string(filepath.Separator), cleanPath) {
+				return nil
+			}
+		}
 		return fmt.Errorf("path %q escapes destination root %q", path, destRoot)
 	}
 
