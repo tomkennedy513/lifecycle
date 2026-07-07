@@ -74,7 +74,7 @@ func (r *DefaultSBOMRestorer) RestoreFromPrevious(image imgutil.Image, layerDige
 	}
 	defer rc.Close()
 
-	return layers.Extract(rc, "")
+	return layers.Extract(rc, r.LayersDir)
 }
 
 func (r *DefaultSBOMRestorer) RestoreFromCache(cache Cache, layerDigest string) error {
@@ -90,7 +90,7 @@ func (r *DefaultSBOMRestorer) RestoreFromCache(cache Cache, layerDigest string) 
 	}
 	defer rc.Close()
 
-	return layers.Extract(rc, "")
+	return layers.Extract(rc, r.LayersDir)
 }
 
 func (r *DefaultSBOMRestorer) RestoreToBuildpackLayers(detectedBps []buildpack.GroupElement) error {
