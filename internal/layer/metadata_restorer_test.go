@@ -95,6 +95,36 @@ func testLayerMetadataRestorer(t *testing.T, when spec.G, it spec.S) {
 			})
 		})
 
+		when("app metadata contains a layer name with path traversal segments", func() {
+			it.Before(func() {
+				layerMetaDataJSON := h.MustReadFile(t, filepath.Join("testdata", "app_metadata_layer_name_traversal.json"))
+				h.AssertNil(t, json.Unmarshal(layerMetaDataJSON, &layersMetadata))
+			})
+
+			it("returns an error and does not write layer metadata outside of the layers directory", func() {
+				err := layerMetadataRestorer.Restore(buildpacks, layersMetadata, cacheMetadata, layerSHAStore)
+				h.AssertError(t, err, "invalid layer name")
+
+				escapedPath := filepath.Join(filepath.Dir(layerDir), "escaped-layer.toml")
+				h.AssertPathDoesNotExist(t, escapedPath)
+			})
+		})
+
+		when("cache metadata contains a layer name with path traversal segments", func() {
+			it.Before(func() {
+				cacheMetaDataJSON := h.MustReadFile(t, filepath.Join("testdata", "cache_metadata_layer_name_traversal.json"))
+				h.AssertNil(t, json.Unmarshal(cacheMetaDataJSON, &cacheMetadata))
+			})
+
+			it("returns an error and does not write layer metadata outside of the layers directory", func() {
+				err := layerMetadataRestorer.Restore(buildpacks, layersMetadata, cacheMetadata, layerSHAStore)
+				h.AssertError(t, err, "invalid layer name")
+
+				escapedPath := filepath.Join(filepath.Dir(layerDir), "escaped-cache-layer.toml")
+				h.AssertPathDoesNotExist(t, escapedPath)
+			})
+		})
+
 		when("only cache metadata is present", func() {
 			it.Before(func() {
 				cacheMetaDataJSON := h.MustReadFile(t, filepath.Join("testdata", "cache_metadata.json"))

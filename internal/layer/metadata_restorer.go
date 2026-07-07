@@ -134,12 +134,23 @@ func (r *DefaultMetadataRestorer) restoreLayerMetadata(layerSHAStore SHAStore, a
 }
 
 func (r *DefaultMetadataRestorer) writeLayerMetadata(layerSHAStore SHAStore, buildpackDir buildpack.LayersDir, layerName string, metadata buildpack.LayerMetadata, buildpackID string) error {
+	if err := validateLayerName(layerName); err != nil {
+		return errors.Wrapf(err, "restoring metadata for buildpack %q", buildpackID)
+	}
 	layer := buildpackDir.NewLayer(layerName, buildpackDir.Buildpack.API, r.Logger)
 	r.Logger.Debugf("Writing layer metadata for %q", layer.Identifier())
 	if err := layer.WriteMetadata(metadata.LayerMetadataFile); err != nil {
 		return err
 	}
 	return layerSHAStore.add(buildpackID, metadata.SHA, layer)
+}
+
+// validateLayerName returns an error unless name is a single, non-special path segment.
+func validateLayerName(name string) error {
+	if name == "" || name == "." || name == ".." || filepath.Base(name) != name || filepath.Clean(name) != name {
+		return fmt.Errorf("invalid layer name %q: must be a single path segment", name)
+	}
+	return nil
 }
 
 type NopMetadataRestorer struct{}
