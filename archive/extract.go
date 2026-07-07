@@ -121,7 +121,7 @@ func applyUmask(mode os.FileMode, umask int) os.FileMode {
 }
 
 func writeFile(in io.Reader, path string, mode os.FileMode, buf []byte) (err error) {
-	fh, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, mode)
+	fh, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC|noFollow, mode)
 	if err != nil {
 		return err
 	}

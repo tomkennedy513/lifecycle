@@ -17,6 +17,9 @@ const (
 	hdrFileAttributes  = hdrMSWindowsPrefix + "fileattr"
 )
 
+// noFollow is unavailable on Windows.
+const noFollow = 0
+
 func setUmask(newMask int) (oldMask int) {
 	// Not implemented on Windows
 	return 0

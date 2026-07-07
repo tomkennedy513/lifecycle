@@ -9,6 +9,9 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+// noFollow makes os.OpenFile refuse to follow a final-component symlink.
+const noFollow = unix.O_NOFOLLOW
+
 func setUmask(newMask int) (oldMask int) {
 	return unix.Umask(newMask)
 }

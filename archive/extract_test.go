@@ -132,6 +132,27 @@ func testExtract(t *testing.T, when spec.G, it spec.S) {
 				h.AssertError(t, archive.Extract(tr2, tmpDir), "is a symlink")
 			})
 		})
+
+		when("a regular-file entry targets a pre-existing symlink", func() {
+			it("does not follow it", func() {
+				outside, err := os.MkdirTemp("", "nofollow-outside")
+				h.AssertNil(t, err)
+				defer os.RemoveAll(outside)
+				victim := filepath.Join(outside, "victim")
+
+				// Pre-plant a symlink inside destRoot pointing outside.
+				h.AssertNil(t, os.Symlink(victim, filepath.Join(tmpDir, "planted")))
+
+				ftr := &fakeTarReader{}
+				tr2 := archive.NewNormalizingTarReader(ftr)
+				tr2.PrependDir(tmpDir)
+				ftr.pushHeader(&tar.Header{Name: "planted", Typeflag: tar.TypeReg, Mode: int64(0644)})
+
+				h.AssertError(t, archive.Extract(tr2, tmpDir), "planted")
+				_, err = os.Lstat(victim)
+				h.AssertError(t, err, "no such file or directory")
+			})
+		})
 	})
 }
 
