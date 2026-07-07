@@ -3,6 +3,7 @@ package layers
 import (
 	"archive/tar"
 	"io"
+	"path/filepath"
 
 	"github.com/buildpacks/lifecycle/archive"
 )
@@ -11,8 +12,13 @@ import (
 // Contents of r should be an OCI layer.
 // If dest is an empty string files with be extracted to `/` on unix filesystems.
 func Extract(r io.Reader, dest string) error {
+	root := dest
+	if root == "" {
+		root = `/`
+	}
+	root = filepath.Clean(root)
 	tr := tarReader(r, dest)
-	return archive.Extract(tr)
+	return archive.Extract(tr, root)
 }
 
 func tarReader(r io.Reader, dest string) archive.TarReader {
